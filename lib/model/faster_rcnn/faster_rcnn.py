@@ -152,12 +152,12 @@ class _fasterRCNN(nn.Module):
             ids = perm[:pooled_feat.size(0)/4].cuda()
 
             if cfg.TRANSTER_LOSS == 'MMD':
-                transfer_loss = torch.abs(MMD(pooled_feat[ids], t_pooled_feat[ids]))
+                transfer_loss = MMD(pooled_feat[ids], t_pooled_feat[ids])
 
             elif cfg.TRANSTER_LOSS == 'JMMD':
                 t_cls_score = self.RCNN_cls_score(t_pooled_feat)
 
-                transfer_loss = torch.abs(JMMD([pooled_feat[ids], cls_score[ids]], [t_pooled_feat[ids], t_cls_score[ids]]))
+                transfer_loss = JMMD([pooled_feat[ids], cls_score[ids]], [t_pooled_feat[ids], t_cls_score[ids]])
         
         #-----------------------------------Tranfer learninig------------------------------#
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss
