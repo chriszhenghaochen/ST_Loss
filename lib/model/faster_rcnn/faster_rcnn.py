@@ -151,13 +151,13 @@ class _fasterRCNN(nn.Module):
 
             # random select
             if cfg.TRANSFER_SELECT == 'RANDOM':
-                perm = torch.randperm(pooled_feat.size(0)).cuda()
+                perm = torch.randperm(pooled_feat.size(0))
                 ids_s = perm[:pooled_feat.size(0)/16].cuda()
                 ids_t = ids_s
 
             # select positive sample and predicted postive sample
             elif cfg.TRANSFER_SELECT == 'CONDITION':
-                ids_s = torch.range(0, pooled_feat.size(0)/16 - 1).cuda()
+                ids_s = torch.range(0, pooled_feat.size(0)/16 - 1)
                 ids_s = torch.Tensor.long(ids_s).cuda()
                 _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/16)
                 ids_t = ids_t.cuda()
