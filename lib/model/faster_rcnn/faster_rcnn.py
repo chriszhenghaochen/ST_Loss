@@ -116,8 +116,6 @@ class _fasterRCNN(nn.Module):
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
         #-----------------------------------Tranfer learninig------------------------------# 
-        #print(self.RCNN_top)
-                ##Target Data
         transfer_loss = 0
 
         if self.training and transfer:
@@ -146,20 +144,32 @@ class _fasterRCNN(nn.Module):
 
             # feed pooled features to top model
             t_pooled_feat = self._head_to_tail(t_pooled_feat)
+            t_cls_score = self.RCNN_cls_score(t_pooled_feat)
 
-            # calculate MMD from source and targe via fc7
-            perm = torch.randperm(pooled_feat.size(0)).cuda()
-            ids = perm[:pooled_feat.size(0)/4].cuda()
+            ids_s = Variable(torch.LongTensor(1).cuda())
+            ids_t = Variable(torch.LongTensor(1).cuda())
 
-            if cfg.TRANSTER_LOSS == 'MMD':
-                transfer_loss = MMD(pooled_feat[ids], t_pooled_feat[ids])
+            # random select
+            if cfg.TRANSFER_SELECT == 'RANDOM':
+                perm = torch.randperm(pooled_feat.size(0)).cuda()
+                ids_s = perm[:pooled_feat.size(0)/16].cuda()
+                ids_t = ids_s
 
-            elif cfg.TRANSTER_LOSS == 'JMMD':
-                t_cls_score = self.RCNN_cls_score(t_pooled_feat)
+            # select positive sample and predicted postive sample
+            elif cfg.TRANSFER_SELECT == 'CONDITION':
+                ids_s = torch.range(0, pooled_feat.size(0)/16 - 1).cuda()
+                ids_s = torch.Tensor.long(ids_s).cuda()
+                _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/16)
+                ids_t = ids_t.cuda()
 
-                transfer_loss = JMMD([pooled_feat[ids], cls_score[ids]], [t_pooled_feat[ids], t_cls_score[ids]])
+            # calculate MMD pr JMMD loss
+            if cfg.TRANSFER_LOSS == 'MMD':
+                transfer_loss = MMD(pooled_feat[ids_s], t_pooled_feat[ids_t])
+
+            elif cfg.TRANSFER_LOSS == 'JMMD':
+                transfer_loss = JMMD([pooled_feat[ids_s], cls_score[ids_t]], [t_pooled_feat[ids_s], t_cls_score[ids_t]])
         
-        #-----------------------------------Tranfer learninig------------------------------#
+        #-----------------------------------Tranfer learninig Done------------------------------#
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss
 
     def _init_weights(self):

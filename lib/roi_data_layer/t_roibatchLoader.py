@@ -88,11 +88,7 @@ class t_roibatchLoader(data.Dataset):
 
         # if the image need to crop, crop to the target size.
         ratio = self.ratio_list_batch[index]
-
-        # print('ratio ',ratio)
-
-        #fix the ratio here, in case it goes wrong, you can adjust this via yourself, it won't take much different
-        ratio = 2
+        #print('ratio ',ratio)
 
         if self._roidb[index_ratio]['need_crop']:
             if ratio < 1:
@@ -216,7 +212,6 @@ class t_roibatchLoader(data.Dataset):
         padding_data = padding_data.permute(2, 0, 1).contiguous()
         im_info = im_info.view(3)
 
-        # print(padding_data.size())
         return padding_data, im_info
     else:
         # data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)

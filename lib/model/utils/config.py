@@ -301,9 +301,10 @@ __C.CUDA = False
 
 __C.CROP_RESIZE_WITH_MAX_POOL = True
 
-# transfer learning
+# transfer
 __C.Trade_Off = 1
-__C.TRANSTER_LOSS = 'JMMD'
+__C.TRANSFER_SELECT = 'CONDITION'
+__C.TRANSFER_LOSS = 'MMD'
 
 import pdb
 def get_output_dir(imdb, weights_filename):
