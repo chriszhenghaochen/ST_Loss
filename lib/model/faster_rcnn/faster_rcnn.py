@@ -167,7 +167,7 @@ class _fasterRCNN(nn.Module):
                 transfer_loss = MMD(pooled_feat[ids_s], t_pooled_feat[ids_t])
 
             elif cfg.TRANSFER_LOSS == 'JMMD':
-                transfer_loss = JMMD([pooled_feat[ids_s], cls_score[ids_t]], [t_pooled_feat[ids_s], t_cls_score[ids_t]])
+                transfer_loss = JMMD([pooled_feat[ids_s], cls_score[ids_s]], [t_pooled_feat[ids_t], t_cls_score[ids_t]])
         
         #-----------------------------------Tranfer learninig Done------------------------------#
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss
