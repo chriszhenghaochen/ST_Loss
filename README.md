@@ -8,7 +8,8 @@ follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
 ```
 # transfer learning
 __C.Trade_Off = 1
-__C.TRANSTER_LOSS = 'JMMD' #JMMD or MMD
+__C.TRANSFER_SELECT = 'CONDITION' #CONDITION OR RANDOM
+__C.TRANSFER_LOSS = 'MMD' #JMMD or MMD
 ```
 ## Data Preparation
 
