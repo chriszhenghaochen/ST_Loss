@@ -84,6 +84,9 @@ class _fasterRCNN(nn.Module):
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
+        #store pool 5 information
+        pool5_flat_s = base_feat.view(base_feat.size(0), -1)
+
         # feed pooled features to top model
         pooled_feat = self._head_to_tail(pooled_feat)
 
@@ -144,6 +147,9 @@ class _fasterRCNN(nn.Module):
 
             # feed pooled features to top model
             t_pooled_feat = self._head_to_tail(t_pooled_feat)
+
+            pool5_flat_t = t_base_feat.view(t_base_feat.size(0), -1)
+
             t_cls_score = self.RCNN_cls_score(t_pooled_feat)
 
             ids_s = Variable(torch.LongTensor(1).cuda())
@@ -152,14 +158,14 @@ class _fasterRCNN(nn.Module):
             # random select
             if cfg.TRANSFER_SELECT == 'RANDOM':
                 perm = torch.randperm(pooled_feat.size(0))
-                ids_s = perm[:pooled_feat.size(0)/16].cuda()
+                ids_s = perm[:pooled_feat.size(0)/8].cuda()
                 ids_t = ids_s
 
             # select positive sample and predicted postive sample
             elif cfg.TRANSFER_SELECT == 'CONDITION':
-                ids_s = torch.range(0, pooled_feat.size(0)/16 - 1)
+                ids_s = torch.range(0, pooled_feat.size(0)/8 - 1)
                 ids_s = torch.Tensor.long(ids_s).cuda()
-                _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/16)
+                _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/8)
                 ids_t = ids_t.cuda()
 
             # calculate MMD pr JMMD loss
@@ -168,7 +174,15 @@ class _fasterRCNN(nn.Module):
 
             elif cfg.TRANSFER_LOSS == 'JMMD':
                 transfer_loss = JMMD([pooled_feat[ids_s], cls_score[ids_s]], [t_pooled_feat[ids_t], t_cls_score[ids_t]])
+
+            elif cfg.TRANSFER_LOSS == 'feature_MMD':
+                transfer_loss = MMD(pool5_flat_s, pool5_flat_t)
         
+        # #debug session
+        # print('source ', pooled_feat[ids_s].size())
+        # print('target ', t_pooled_feat[ids_t].size())
+        # #debug done
+
         #-----------------------------------Tranfer learninig Done------------------------------#
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss
 
