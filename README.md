@@ -15,6 +15,9 @@ __C.TRANSFER_LOSS = 'MMD' #JMMD or MMD
 
 Put your source data into Pascal Foramtted folder with folder name VOC2007 and link with data/VOCdevkit2007, put your target data into VOC2006 and link data/VOCdevkit2006.
 
+To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
+[kitti2Pascal](ttps://github.com/chriszhenghaochen/Kitti2Pascal) tutorial
+
 ## References
 * *Ren, Shaoqing, et al. "Faster R-CNN: towards real-time object detection with region proposal networks." IEEE transactions on pattern analysis and machine intelligence 39.6 (2017): 1137-1149.*
 
