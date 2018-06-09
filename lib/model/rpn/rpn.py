@@ -55,7 +55,7 @@ class _RPN(nn.Module):
         )
         return x
 
-    def forward(self, base_feat, im_info, gt_boxes, num_boxes, transfer = False):
+    def forward(self, base_feat, im_info, gt_boxes, num_boxes):
 
         batch_size = base_feat.size(0)
 
@@ -81,7 +81,7 @@ class _RPN(nn.Module):
         self.rpn_loss_box = 0
 
         # generating training labels and build the rpn loss
-        if self.training == True and transfer == False:
+        if self.training == True:
             assert gt_boxes is not None
 
             rpn_data = self.RPN_anchor_target((rpn_cls_score.data, gt_boxes, im_info, num_boxes))

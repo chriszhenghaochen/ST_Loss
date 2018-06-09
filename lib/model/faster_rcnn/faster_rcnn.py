@@ -38,7 +38,7 @@ class _fasterRCNN(nn.Module):
         self.RCNN_roi_crop = _RoICrop()
 
 
-    def forward(self, im_data, im_info, gt_boxes, num_boxes, t_im_data = None, t_im_info = None, transfer = False):
+    def FRCN(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
 
         im_info = im_info.data
@@ -90,7 +90,9 @@ class _fasterRCNN(nn.Module):
         # feed pooled features to top model
         pooled_feat = self._head_to_tail(pooled_feat)
 
+        # print('base_feat ', base_feat.size())
         # print('fc7 ',pooled_feat.size())
+        # print('labels ', rois_label.size())
 
         # compute bbox offset
         bbox_pred = self.RCNN_bbox_pred(pooled_feat)
@@ -118,39 +120,29 @@ class _fasterRCNN(nn.Module):
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
-        #-----------------------------------Tranfer learninig------------------------------# 
-        transfer_loss = 0
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, pooled_feat, cls_score
+
+
+    def forward(self, im_data, im_info, gt_boxes, num_boxes, t_im_data = None, t_im_info = None, t_gt_boxes = None, t_num_boxes = None, transfer = False):
+
+        rois, cls_prob, \
+        bbox_pred, rpn_loss_cls, \
+        rpn_loss_bbox, RCNN_loss_cls, \
+        RCNN_loss_bbox, rois_label, \
+        pooled_feat, cls_score = self.FRCN(im_data, im_info, gt_boxes, num_boxes)
+
+        t_rois, t_cls_prob, \
+        t_bbox_pred, t_rpn_loss_cls, \
+        t_rpn_loss_bbox, t_RCNN_loss_cls, \
+        t_RCNN_loss_bbox, t_rois_label = 0, 0, 0, 0, 0, 0, 0, 0
+
 
         if self.training and transfer:
-            t_im_info = t_im_info.data
-            t_batch_size = t_im_data.size(0)
-
-            # feed image data to base model to obtain base feature map
-            t_base_feat = self.RCNN_base(t_im_data)
-
-            # feed base feature map tp RPN to obtain rois
-            t_rois, t_rpn_loss_cls, t_rpn_loss_bbox = self.RCNN_rpn(t_base_feat, t_im_info, None, None, transfer)
-            t_rois = Variable(t_rois)
-
-            if cfg.POOLING_MODE == 'crop':
-                # pdb.set_trace()
-                # pooled_feat_anchor = _crop_pool_layer(base_feat, rois.view(-1, 5))
-                t_grid_xy = _affine_grid_gen(t_rois.view(-1, 5), t_base_feat.size()[2:], self.grid_size)
-                t_grid_yx = torch.stack([t_grid_xy.data[:,:,:,1], t_grid_xy.data[:,:,:,0]], 3).contiguous()
-                t_pooled_feat = self.RCNN_roi_crop(t_base_feat, Variable(t_grid_yx).detach())
-                if cfg.CROP_RESIZE_WITH_MAX_POOL:
-                    t_pooled_feat = F.max_pool2d(t_pooled_feat, 2, 2)
-            elif cfg.POOLING_MODE == 'align':
-                t_pooled_feat = self.RCNN_roi_align(t_base_feat, t_rois.view(-1, 5))
-            elif cfg.POOLING_MODE == 'pool':
-                t_pooled_feat = self.RCNN_roi_pool(t_base_feat, t_rois.view(-1,5))
-
-            # feed pooled features to top model
-            t_pooled_feat = self._head_to_tail(t_pooled_feat)
-
-            pool5_flat_t = t_base_feat.view(t_base_feat.size(0), -1)
-
-            t_cls_score = self.RCNN_cls_score(t_pooled_feat)
+            t_rois, t_cls_prob, \
+            t_bbox_pred, t_rpn_loss_cls, \
+            t_rpn_loss_bbox, t_RCNN_loss_cls, \
+            t_RCNN_loss_bbox, t_rois_label, \
+            t_pooled_feat, t_cls_score= self.FRCN(t_im_data, t_im_info, t_gt_boxes, t_num_boxes)
 
             ids_s = Variable(torch.LongTensor(1).cuda())
             ids_t = Variable(torch.LongTensor(1).cuda())
@@ -165,8 +157,10 @@ class _fasterRCNN(nn.Module):
             elif cfg.TRANSFER_SELECT == 'CONDITION':
                 ids_s = torch.range(0, pooled_feat.size(0)/8 - 1)
                 ids_s = torch.Tensor.long(ids_s).cuda()
-                _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/8)
-                ids_t = ids_t.cuda()
+                ids_t = ids_s
+                # _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/8)
+                # ids_t = ids_t.cuda()
+
 
             # calculate MMD pr JMMD loss
             if cfg.TRANSFER_LOSS == 'MMD':
@@ -178,13 +172,15 @@ class _fasterRCNN(nn.Module):
             elif cfg.TRANSFER_LOSS == 'feature_MMD':
                 transfer_loss = MMD(pool5_flat_s, pool5_flat_t)
         
-        # #debug session
-        # print('source ', pooled_feat[ids_s].size())
-        # print('target ', t_pooled_feat[ids_t].size())
-        # #debug done
+            # #debug session
+            # print('source ', pooled_feat[ids_s].size())
+            # print('target ', t_pooled_feat[ids_t].size())
+            # #debug done
+
 
         #-----------------------------------Tranfer learninig Done------------------------------#
-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss, \
+               t_rois, t_cls_prob, t_bbox_pred, t_rpn_loss_cls, t_rpn_loss_bbox, t_RCNN_loss_cls, t_RCNN_loss_bbox, t_rois_label
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):

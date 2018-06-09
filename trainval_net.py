@@ -26,7 +26,7 @@ from torch.utils.data.sampler import Sampler
 
 from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatchLoader import roibatchLoader
-from roi_data_layer.t_roibatchLoader import t_roibatchLoader
+
 from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from model.utils.net_utils import weights_normal_init, save_net, load_net, \
       adjust_learning_rate, save_checkpoint, clip_gradient
@@ -66,7 +66,7 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="/home/zhcheng/drive_test_JAN_model",
+                      help='directory to save models', default="/home/zhcheng/JointDrive_JMMD",
                       nargs=argparse.REMAINDER)
   parser.add_argument('--nw', dest='num_workers',
                       help='number of worker to load data',
@@ -217,7 +217,7 @@ if __name__ == '__main__':
   imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdb_name)
 
   # load target data set not gt information will be loaded
-  t_imdb, t_roidb, t_ratio_list, t_ratio_index = combined_roidb(args.t_imdb_name, False)
+  t_imdb, t_roidb, t_ratio_list, t_ratio_index = combined_roidb(args.t_imdb_name)
   # load target data set done
 
   train_size = len(roidb)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
                             sampler=sampler_batch, num_workers=args.num_workers)
 
   # initialize target data loader, ignored gt information
-  t_dataset = t_roibatchLoader(t_roidb, t_ratio_list, t_ratio_index, args.batch_size, \
+  t_dataset = roibatchLoader(t_roidb, t_ratio_list, t_ratio_index, args.batch_size, \
                            t_imdb.num_classes, training=True)
 
   # use sample
@@ -280,16 +280,22 @@ if __name__ == '__main__':
   # initilize the tensor holder here.
   t_im_data = torch.FloatTensor(1)
   t_im_info = torch.FloatTensor(1)
+  t_num_boxes = torch.LongTensor(1)
+  t_gt_boxes = torch.FloatTensor(1)
 
 
   # ship to cuda
   if args.cuda:
     t_im_data = t_im_data.cuda()
     t_im_info = t_im_info.cuda()
+    t_num_boxes = t_num_boxes.cuda()
+    t_gt_boxes = t_gt_boxes.cuda()
 
   # make variable
   t_im_data = Variable(t_im_data)
   t_im_info = Variable(t_im_info)
+  t_num_boxes = Variable(t_num_boxes)
+  t_gt_boxes = Variable(t_gt_boxes)
 #--------------------------process target data here done---------------------#
 
   if args.cuda:
@@ -371,46 +377,59 @@ if __name__ == '__main__':
 
     #set tradeoff
     tradeoff = cfg.Trade_Off
+    targetWeight = cfg.Target_Weight
     #set tradeoff done
 
     for step in range(iters_per_epoch):
       data = next(data_iter)
-
-      #prepare the target data
-      if step % int((len(t_roidb)/args.batch_size)) == 0:
-        # print(step)
-        t_data_iter = iter(t_dataloader)
-
-      t_data = next(t_data_iter)
-      # prepare the target data done
-
-      # #debug
-      # if (t_data == None):
-      #   assert('target data is not enough')
-      # #debug done
 
       im_data.data.resize_(data[0].size()).copy_(data[0])
       im_info.data.resize_(data[1].size()).copy_(data[1])
       gt_boxes.data.resize_(data[2].size()).copy_(data[2])
       num_boxes.data.resize_(data[3].size()).copy_(data[3])
 
+      #----------------------load target data-------------------#
+      #prepare the target data
+      if step % int((len(t_roidb)/args.batch_size)) == 0:
+        t_data_iter = iter(t_dataloader)
+
+      t_data = next(t_data_iter)
+
+
+      # prepare the target data done
+
       # target data
       t_im_data.data.resize_(t_data[0].size()).copy_(t_data[0])
       t_im_info.data.resize_(t_data[1].size()).copy_(t_data[1])
+      t_gt_boxes.data.resize_(t_data[2].size()).copy_(t_data[2])
+      t_num_boxes.data.resize_(t_data[3].size()).copy_(t_data[3])
       # target data done
+      #----------------------load target data-------------------#
 
-      # #debug
-      # print('source ', im_data.data.size())
-      # print('target ', t_im_data.data.size())
+      # #concat input
+      # input_data = torch.cat((im_data, t_im_data), dim = 0)
+      # input_info = torch.cat((im_info, t_im_info), dim = 0)
+      # input_gt_boxes = torch.cat((gt_boxes, t_gt_boxes), dim = 0)
+      # input_num_boxes = torch.cat((num_boxes, t_num_boxes), dim = 0)
+      # # #debug
+      # # print('source ', im_data.data)
+      # # print('target ', t_im_data.data)
 
       fasterRCNN.zero_grad()
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label, transfer_loss = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, t_im_data, t_im_info, True)
+      rois_label, transfer_loss, \
+      t_rois, t_cls_prob, t_bbox_pred, \
+      t_rpn_loss_cls, t_rpn_loss_box, \
+      t_RCNN_loss_cls, t_RCNN_loss_bbox, \
+      t_rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, t_im_data, t_im_info, t_gt_boxes, t_num_boxes, True)
 
-      loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
-           + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean() + tradeoff*transfer_loss.mean()
+      loss = targetWeight*rpn_loss_cls.mean() + targetWeight*rpn_loss_box.mean() \
+           + targetWeight*RCNN_loss_cls.mean() + targetWeight*RCNN_loss_bbox.mean() + tradeoff*transfer_loss.mean() \
+           + rpn_loss_cls.mean() + rpn_loss_box.mean() \
+           + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+
       loss_temp += loss.data[0]
 
       # backward
@@ -433,20 +452,36 @@ if __name__ == '__main__':
           transfer_loss = transfer_loss.mean().data[0]
           fg_cnt = torch.sum(rois_label.data.ne(0))
           bg_cnt = rois_label.data.numel() - fg_cnt
+          t_loss_rpn_cls = t_rpn_loss_cls.mean().data[0]
+          t_loss_rpn_box = t_rpn_loss_box.mean().data[0]
+          t_loss_rcnn_cls = t_RCNN_loss_cls.mean().data[0]
+          t_loss_rcnn_box = t_RCNN_loss_bbox.mean().data[0]
+          t_fg_cnt = torch.sum(t_rois_label.data.ne(0))
+          t_bg_cnt = t_rois_label.data.numel() - t_fg_cnt
         else:
           loss_rpn_cls = rpn_loss_cls.data[0]
           loss_rpn_box = rpn_loss_box.data[0]
           loss_rcnn_cls = RCNN_loss_cls.data[0]
           loss_rcnn_box = RCNN_loss_bbox.data[0]
-          transfer_loss = transfer_loss.mean().data[0]
+          transfer_loss = transfer_loss.data[0]
           fg_cnt = torch.sum(rois_label.data.ne(0))
           bg_cnt = rois_label.data.numel() - fg_cnt
+          t_loss_rpn_cls = t_rpn_loss_cls.data[0]
+          t_loss_rpn_box = t_rpn_loss_box.data[0]
+          t_loss_rcnn_cls = t_RCNN_loss_cls.data[0]
+          t_loss_rcnn_box = t_RCNN_loss_bbox.data[0]
+          t_fg_cnt = torch.sum(t_rois_label.data.ne(0))
+          t_bg_cnt = t_rois_label.data.numel() - t_fg_cnt
 
-        print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e" \
-                                % (args.session, epoch, step, iters_per_epoch, loss_temp, lr))
-        print("\t\t\tfg/bg=(%d/%d), time cost: %f" % (fg_cnt, bg_cnt, end-start))
-        print("\t\t\trpn_cls: %.4f, rpn_box: %.4f, rcnn_cls: %.4f, rcnn_box %.4f, transfer loss %.4f" \
-                      % (loss_rpn_cls, loss_rpn_box, loss_rcnn_cls, loss_rcnn_box, transfer_loss))
+        print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e, time cost: %f" \
+                                % (args.session, epoch, step, iters_per_epoch, loss_temp, lr, end-start))
+        print("\t\t\tfg/bg=(%d/%d)" % (fg_cnt, bg_cnt))
+        print("\t\t\trpn_cls: %.4f, rpn_box: %.4f, rcnn_cls: %.4f, rcnn_box %.4f" \
+                      % (loss_rpn_cls, loss_rpn_box, loss_rcnn_cls, loss_rcnn_box))
+        print("\t\t\ttransfer loss %.4f" % (transfer_loss))
+        print("\t\t\tt_fg/t_bg=(%d/%d)" % (t_fg_cnt, t_bg_cnt))
+        print("\t\t\tt_rpn_cls: %.4f, t_rpn_box: %.4f, t_rcnn_cls: %.4f, t_rcnn_box %.4f" \
+                      % (t_loss_rpn_cls, t_loss_rpn_box, t_loss_rcnn_cls, t_loss_rcnn_box))
 
         if args.use_tfboard:
           info = {
@@ -455,7 +490,11 @@ if __name__ == '__main__':
             'loss_rpn_box': loss_rpn_box,
             'loss_rcnn_cls': loss_rcnn_cls,
             'loss_rcnn_box': loss_rcnn_box,
-            'transfer loss ': transfer_loss
+            'transfer_loss ': transfer_loss,
+            't_loss_rpn_cls': t_loss_rpn_cls,
+            't_loss_rpn_box': t_loss_rpn_box,
+            't_loss_rcnn_cls': t_loss_rcnn_cls,
+            't_loss_rcnn_box': t_loss_rcnn_box
           }
           for tag, value in info.items():
             logger.scalar_summary(tag, value, step)

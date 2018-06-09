@@ -57,7 +57,7 @@ def parse_args():
                       help='set config keys', default=None,
                       nargs=argparse.REMAINDER)
   parser.add_argument('--load_dir', dest='load_dir',
-                      help='directory to load models', default="/home/zhcheng/drive_test_JAN_model",
+                      help='directory to load models', default="/home/zhcheng/JointDrive_JMMD",
                       type=str)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
@@ -242,7 +242,11 @@ if __name__ == '__main__':
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label, _ = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label, transfer_loss, \
+      t_rois, t_cls_prob, t_bbox_pred, \
+      t_rpn_loss_cls, t_rpn_loss_box, \
+      t_RCNN_loss_cls, t_RCNN_loss_bbox, \
+      t_rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       scores = cls_prob.data
       boxes = rois.data[:, :, 1:5]
