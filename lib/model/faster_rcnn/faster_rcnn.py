@@ -120,7 +120,7 @@ class _fasterRCNN(nn.Module):
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, pooled_feat, cls_score
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, pooled_feat
 
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes, t_im_data = None, t_im_info = None, t_gt_boxes = None, t_num_boxes = None, transfer = False):
@@ -128,21 +128,20 @@ class _fasterRCNN(nn.Module):
         rois, cls_prob, \
         bbox_pred, rpn_loss_cls, \
         rpn_loss_bbox, RCNN_loss_cls, \
-        RCNN_loss_bbox, rois_label, \
-        pooled_feat, cls_score = self.FRCN(im_data, im_info, gt_boxes, num_boxes)
+        RCNN_loss_bbox, rois_label, pooled_feat = self.FRCN(im_data, im_info, gt_boxes, num_boxes)
 
         t_rois, t_cls_prob, \
         t_bbox_pred, t_rpn_loss_cls, \
         t_rpn_loss_bbox, t_RCNN_loss_cls, \
-        t_RCNN_loss_bbox, t_rois_label = 0, 0, 0, 0, 0, 0, 0, 0
-
+        t_RCNN_loss_bbox, t_rois_label, t_pooled_feat = 0, 0, 0, 0, 0, 0, 0, 0, 0
+	
+	transfer_loss = 0
 
         if self.training and transfer:
             t_rois, t_cls_prob, \
             t_bbox_pred, t_rpn_loss_cls, \
             t_rpn_loss_bbox, t_RCNN_loss_cls, \
-            t_RCNN_loss_bbox, t_rois_label, \
-            t_pooled_feat, t_cls_score= self.FRCN(t_im_data, t_im_info, t_gt_boxes, t_num_boxes)
+            t_RCNN_loss_bbox, t_rois_label, t_pooled_feat = self.FRCN(t_im_data, t_im_info, t_gt_boxes, t_num_boxes)
 
             ids_s = Variable(torch.LongTensor(1).cuda())
             ids_t = Variable(torch.LongTensor(1).cuda())
@@ -167,7 +166,7 @@ class _fasterRCNN(nn.Module):
                 transfer_loss = MMD(pooled_feat[ids_s], t_pooled_feat[ids_t])
 
             elif cfg.TRANSFER_LOSS == 'JMMD':
-                transfer_loss = JMMD([pooled_feat[ids_s], cls_score[ids_s]], [t_pooled_feat[ids_t], t_cls_score[ids_t]])
+                transfer_loss = JMMD([pooled_feat[ids_s], cls_prob[ids_s], bbox_pred[ids_s]], [t_pooled_feat[ids_t], t_cls_prob[ids_t], t_bbox_pred[ids_t]])
 
             elif cfg.TRANSFER_LOSS == 'feature_MMD':
                 transfer_loss = MMD(pool5_flat_s, pool5_flat_t)
