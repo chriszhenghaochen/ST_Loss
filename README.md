@@ -7,10 +7,10 @@ follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
 ## Finetuning
 ```
 # transfer learning
-__C.Trade_Off = 1
-__C.Target_Weight = 0.5
-__C.TRANSFER_SELECT = 'CONDITION' #CONDITION OR RANDOM
-__C.TRANSFER_LOSS = 'JMMD' #JMMD or MMD
+__C.Trade_Off = 0.25
+__C.Target_Weight = 1
+__C.TRANSFER_SELECT = 'POSITIVE' #CONDITION OR RANDOM OR POSITIVE
+__C.TRANSFER_LOSS = 'MMD' #JMMD
 ```
 ## Data Preparation
 

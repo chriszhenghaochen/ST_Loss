@@ -134,8 +134,8 @@ class _fasterRCNN(nn.Module):
         t_bbox_pred, t_rpn_loss_cls, \
         t_rpn_loss_bbox, t_RCNN_loss_cls, \
         t_RCNN_loss_bbox, t_rois_label, t_pooled_feat = 0, 0, 0, 0, 0, 0, 0, 0, 0
-	
-	transfer_loss = 0
+
+        transfer_loss = 0
 
         if self.training and transfer:
             t_rois, t_cls_prob, \
@@ -143,8 +143,8 @@ class _fasterRCNN(nn.Module):
             t_rpn_loss_bbox, t_RCNN_loss_cls, \
             t_RCNN_loss_bbox, t_rois_label, t_pooled_feat = self.FRCN(t_im_data, t_im_info, t_gt_boxes, t_num_boxes)
 
-            ids_s = Variable(torch.LongTensor(1).cuda())
-            ids_t = Variable(torch.LongTensor(1).cuda())
+            ids_s = torch.LongTensor(1).cuda()
+            ids_t = torch.LongTensor(1).cuda()
 
             # random select
             if cfg.TRANSFER_SELECT == 'RANDOM':
@@ -159,6 +159,17 @@ class _fasterRCNN(nn.Module):
                 ids_t = ids_s
                 # _, ids_t = torch.topk(t_cls_score[:,0], pooled_feat.size(0)/8)
                 # ids_t = ids_t.cuda()
+
+            elif cfg.TRANSFER_SELECT == 'POSITIVE':
+                ids_s = torch.nonzero(rois_label.data)
+                ids_t = torch.nonzero(t_rois_label.data)
+
+                ids_size = torch.min(torch.IntTensor([ids_s.size()[0], ids_t.size()[0]]))
+                ids_s = torch.squeeze(ids_s[:ids_size]).cuda()
+                ids_t = torch.squeeze(ids_t[:ids_size]).cuda()
+
+            # print('source ', ids_s)
+            # print('target ', ids_t)
 
 
             # calculate MMD pr JMMD loss
