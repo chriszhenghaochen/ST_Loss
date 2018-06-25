@@ -2,7 +2,7 @@
 
 ## Install and Setup
 
-go to GRL_FRCN and MMD_FRCN then follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
+Go to GRL_FRCN and MMD_FRCN then follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
 
 ## Finetuning
 
@@ -39,8 +39,7 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 
 
 ## Result
-### Data
-[ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018](http://www.wider-challenge.org/) Challenge 2. Use Surveillance data set as **source** and Driven data set as **target**.
+**Data**: [ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018](http://www.wider-challenge.org/) Challenge 2. Use Surveillance data set as **source** and Driven data set as **target**.
 
 | Result           | Surveillance  | Driven |
 | -----------------|:-------------:| -----: |
