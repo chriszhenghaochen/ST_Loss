@@ -2,7 +2,7 @@
 
 ## Install and Setup
 
-follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
+go to GRL_FRCN and MMD_FRCN then follow [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch)
 
 ## Finetuning
 
@@ -37,6 +37,18 @@ Put your source data into Pascal Foramtted folder with folder name VOC2007 and l
 To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 [Kitti2Pascal](https://github.com/chriszhenghaochen/Kitti2Pascal) tutorial
 
+
+## Result
+### Data
+[ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018](http://www.wider-challenge.org/) Challenge 2. Use Surveillance data set as **source** and Driven data set as **target**.
+
+| Result           | Surveillance  | Driven |
+| -----------------|:-------------:| -----: |
+| Baseline (FRCN)  |   71.9        |  63.8  |
+| MMD_FRCN         |   70.0        |  64.9  |
+| GRL_FRCN         |   71.5        |  64.3  |
+
+
 ## References
 * *Ren, Shaoqing, et al. "Faster R-CNN: towards real-time object detection with region proposal networks." IEEE transactions on pattern analysis and machine intelligence 39.6 (2017): 1137-1149.*
 
@@ -49,16 +61,5 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 * *Chen, Yuhua, et al. "Domain adaptive faster r-cnn for object detection in the wild." Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. 2018.*
 
 * *Zhang, Liliang, et al. "Is faster r-cnn doing well for pedestrian detection?." European Conference on Computer Vision. Springer, Cham, 2016.*
-
-
-## Result
-### Data
-[ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018](http://www.wider-challenge.org/) Challenge 2. Use Surveillance data set as **source** and Driven data set as **target**.
-
-| Result           | Surveillance  | Driven |
-| -----------------|:-------------:| -----: |
-| Baseline (FRCN)  |   71.9        |  63.8  |
-| MMD_FRCN         |   70.0        |  64.9  |
-| GRL_FRCN         |   71.5        |  64.3  |
 
 
