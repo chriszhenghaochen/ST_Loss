@@ -59,6 +59,3 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 
 * *Chen, Yuhua, et al. "Domain adaptive faster r-cnn for object detection in the wild." Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. 2018.*
 
-* *Zhang, Liliang, et al. "Is faster r-cnn doing well for pedestrian detection?." European Conference on Computer Vision. Springer, Cham, 2016.*
-
-
