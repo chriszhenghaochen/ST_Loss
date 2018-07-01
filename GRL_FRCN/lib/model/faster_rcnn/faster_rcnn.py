@@ -36,6 +36,9 @@ class _fasterRCNN(nn.Module):
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
 
+        self.transfer_weight = Variable(torch.Tensor([cfg.TRANSFER_WEIGHT]).cuda(), requires_grad=True)
+        self.source_weight = cfg.SOURCE_WEIGHT
+
     def forward(self, im_data, im_info, gt_boxes, num_boxes, domain = None, l = 0, transfer = False):
         batch_size = im_data.size(0)
 
@@ -142,10 +145,20 @@ class _fasterRCNN(nn.Module):
 
             dom_pred = self.domain_pred(domain_input)
             dom_loss = F.cross_entropy(dom_pred, domain_label)
-        
+
+            #this is doged, be careful
+            if batch_size == 1 and self.source_weight != -1:
+                if domain_label.data[0] == 1:
+                    rpn_loss_cls *= self.source_weight
+                    rpn_loss_bbox *= self.source_weight
+                    RCNN_loss_cls *= self.source_weightt
+                    RCNN_loss_bbox *= self.source_weight
+
+
+            dom_loss_output = dom_loss*(self.transfer_weight.expand_as(dom_loss))
         #---------------------transfer learning done-------------------------#
 
-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss_output
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):

@@ -305,7 +305,8 @@ __C.CROP_RESIZE_WITH_MAX_POOL = True
 #Transfer learning:
 __C.TRANSFER = True
 __C.TRANSFER_SELECT = 'POSITIVE'
-__C.TRANSFER_WEIGHT = 1
+__C.TRANSFER_WEIGHT = 0.5
+__C.SOURCE_WEIGHT = 0.5
 
 
 import pdb
