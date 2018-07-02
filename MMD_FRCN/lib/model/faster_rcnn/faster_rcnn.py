@@ -37,6 +37,9 @@ class _fasterRCNN(nn.Module):
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
 
+        #transfer weight
+        self.transfer_weight = Variable(torch.Tensor([cfg.Trade_Off]).cuda(), requires_grad=True)
+
 
     def FRCN(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
@@ -187,7 +190,7 @@ class _fasterRCNN(nn.Module):
             # print('target ', t_pooled_feat[ids_t].size())
             # #debug done
 
-
+            transfer_loss = transfer_loss*(self.transfer_weight.expand_as(transfer_loss))
         #-----------------------------------Tranfer learninig Done------------------------------#
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, transfer_loss, \
                t_rois, t_cls_prob, t_bbox_pred, t_rpn_loss_cls, t_rpn_loss_bbox, t_RCNN_loss_cls, t_RCNN_loss_bbox, t_rois_label

@@ -66,7 +66,7 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="/home/zhcheng/JointDrive_JMMD",
+                      help='directory to save models', default="/home/zhcheng/JointDrive_025",
                       nargs=argparse.REMAINDER)
   parser.add_argument('--nw', dest='num_workers',
                       help='number of worker to load data',
@@ -375,8 +375,6 @@ if __name__ == '__main__':
     t_data_iter = iter(t_dataloader)
     #target data iter done
 
-    #set tradeoff
-    tradeoff = cfg.Trade_Off
     targetWeight = cfg.Target_Weight
     #set tradeoff done
 
@@ -426,9 +424,9 @@ if __name__ == '__main__':
       t_rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, t_im_data, t_im_info, t_gt_boxes, t_num_boxes, True)
 
       loss = targetWeight*rpn_loss_cls.mean() + targetWeight*rpn_loss_box.mean() \
-           + targetWeight*RCNN_loss_cls.mean() + targetWeight*RCNN_loss_bbox.mean() + tradeoff*transfer_loss.mean() \
-           + rpn_loss_cls.mean() + rpn_loss_box.mean() \
-           + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+           + targetWeight*RCNN_loss_cls.mean() + targetWeight*RCNN_loss_bbox.mean() + transfer_loss.mean() \
+           + t_rpn_loss_cls.mean() + t_rpn_loss_box.mean() \
+           + t_RCNN_loss_cls.mean() + t_RCNN_loss_bbox.mean()
 
       loss_temp += loss.data[0]
 
