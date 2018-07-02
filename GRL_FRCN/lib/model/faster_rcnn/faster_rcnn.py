@@ -152,7 +152,7 @@ class _fasterRCNN(nn.Module):
                 if domain_label.data[0] == 1:
                     rpn_loss_cls *= self.source_weight
                     rpn_loss_bbox *= self.source_weight
-                    RCNN_loss_cls *= self.source_weightt
+                    RCNN_loss_cls *= self.source_weight
                     RCNN_loss_bbox *= self.source_weight
 
 
