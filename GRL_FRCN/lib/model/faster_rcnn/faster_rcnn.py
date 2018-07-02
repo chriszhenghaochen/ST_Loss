@@ -117,6 +117,7 @@ class _fasterRCNN(nn.Module):
         #-----------------------transfer learning----------------------------#
         #print(domain)
         dom_loss = 0
+
         #base line: transfer == False
         if self.training and transfer == True:
             
@@ -155,10 +156,10 @@ class _fasterRCNN(nn.Module):
                     RCNN_loss_bbox *= self.source_weight
 
 
-            dom_loss_output = dom_loss*(self.transfer_weight.expand_as(dom_loss))
+            dom_loss = dom_loss*(self.transfer_weight.expand_as(dom_loss))
         #---------------------transfer learning done-------------------------#
 
-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss_output
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
