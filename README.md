@@ -42,11 +42,11 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 ## Result
 **Data**: [ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018](http://www.wider-challenge.org/) Challenge 2. Use Surveillance data set as **source** and Driven data set as **target**.
 
-| Result           | Surveillance  | Driven |
-| -----------------|:-------------:| -----: |
-| Baseline (FRCN)  |   71.9        |  63.8  |
-| MMD_FRCN         |   70.0        |  64.9  |
-| GRL_FRCN         |   71.5        |  64.3  |
+| Result           | Surveillance  | Driven   |
+| -----------------|:-------------:| -----:   |
+| Baseline (FRCN)  |   71.9        |  63.8    |
+| MMD_FRCN         |   70.0        |  **64.9**|
+| GRL_FRCN         |   71.5        |  **66.9**|
 
 
 ## References
