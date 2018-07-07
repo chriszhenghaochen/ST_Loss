@@ -56,7 +56,8 @@ class vgg16(_fasterRCNN):
 
     #------------------transfer learning--------------#
     #we only have 2 domains
-    self.domain_pred = nn.Sequential(nn.Linear(4096, 1024), nn.ReLU(True), nn.Dropout(),
+    self.domain_process = nn.Sequential(nn.Linear(4096, 256), nn.ReLU(True))
+    self.domain_pred = nn.Sequential(nn.Linear(256, 1024), nn.ReLU(True), nn.Dropout(),
                                      nn.Linear(1024, 1024), nn.ReLU(True), nn.Dropout(),
                                      nn.Linear(1024, 2))   
 

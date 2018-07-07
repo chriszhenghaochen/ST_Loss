@@ -57,7 +57,7 @@ def parse_args():
                       help='set config keys', default=None,
                       nargs=argparse.REMAINDER)
   parser.add_argument('--load_dir', dest='load_dir',
-                      help='directory to load models', default="/home/zhcheng/GRL_01",
+                      help='directory to load models', default="/home/zhcheng/TOP",
                       type=str)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
