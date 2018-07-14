@@ -3,8 +3,11 @@
 ```
 # transfer learning
 __C.TRANSFER = True
-__C.TRANSFER_SELECT = 'POSITIVE'
-__C.TRANSFER_WEIGHT = 1
+__C.TRANSFER_LOSS = True
+__C.TRANSFER_GRL = False
+__C.TRANSFER_SELECT = 'ALL'
+__C.TRANSFER_WEIGHT = 0.5
+__C.TRANSFER_GAMMA = 1
 ```
 
 ## Data Preparation
