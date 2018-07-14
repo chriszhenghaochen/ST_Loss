@@ -55,9 +55,9 @@ def get_minibatch(roidb, num_classes):
   im_name = roidb[0]['image']
 
   if im_name.find('VOC2012') == -1:
-    blobs['domain'] = np.zeros((2000, 1),dtype=np.float32)
+    blobs['domain'] = np.zeros((2000, 1),dtype=np.float32) # Target = 0
   else:
-    blobs['domain'] = np.ones((2000, 1),dtype=np.float32)
+    blobs['domain'] = np.ones((2000, 1),dtype=np.float32)  # Source = 1
 
   return blobs
 

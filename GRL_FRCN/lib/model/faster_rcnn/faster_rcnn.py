@@ -37,7 +37,8 @@ class _fasterRCNN(nn.Module):
         self.RCNN_roi_crop = _RoICrop()
 
         self.transfer_weight = Variable(torch.Tensor([cfg.TRANSFER_WEIGHT]).cuda(), requires_grad=True)
-        self.source_weight = cfg.SOURCE_WEIGHT
+
+
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes, domain = None, l = 0, transfer = False):
         batch_size = im_data.size(0)
@@ -96,7 +97,15 @@ class _fasterRCNN(nn.Module):
 
         #base line: transfer == False
         if self.training and transfer == True:
+
+            domain_input = self.domain_process(pooled_feat)
             
+            if cfg.TRANSFER_GRL == True:
+                grl = domain_input.register_hook(lambda grad: grad * -1*l)
+
+            dom_pred = self.domain_pred(domain_input)
+            
+            ##############DOMAIN LOSS SELECTION##########
             domain_label = Variable(domain_label.cpu().cuda().view(-1).long())
             ids = torch.LongTensor(1).cuda()
 
@@ -126,48 +135,36 @@ class _fasterRCNN(nn.Module):
 
                 ids = torch.cat((ids_p, ids_n),0).cuda()
 
+            # select all sample
+            if cfg.TRANSFER_SELECT == 'ALL':
+                dom_pred_loss = dom_pred
+                dom_label_loss = domain_label
+            else:
+                dom_pred_loss = dom_pred[ids]
+                dom_label_loss = domain_label[ids]
 
-            domain_input = self.domain_process(pooled_feat)
-            grl = domain_input.register_hook(lambda grad: grad * -1*l)
+            ##########DOMAIN LOSS SELECTION DONE##########
 
-            dom_pred = self.domain_pred(domain_input)
-            dom_loss = F.cross_entropy(dom_pred[ids], domain_label[ids])
+            dom_loss = F.cross_entropy(dom_pred_loss, dom_label_loss)
 
             dom_loss = dom_loss*(self.transfer_weight.expand_as(dom_loss))
 
 
-            if batch_size == 1 and domain_label.data[0] == 1 and cfg.SOURCE_LOSS == 'TOP':
+            ############Process Tranfer Loss Weight#########
+            if cfg.TRANSFER_LOSS == True:
+                p_target = F.softmax(dom_pred)[:, 0]
+                domain_label.data = domain_label.data.type(torch.FloatTensor).cuda()
+                l_target = domain_label*cfg.TRANSFER_GAMMA
 
-                dom_pred = dom_pred[:,0]
+                weight = p_target**l_target
 
-                ids_p = torch.nonzero(rois_label.data)
-                ids_p = torch.squeeze(ids_p).cuda()
+            ################################################
 
 
-                if ids_p.size(0) > rois.size(1)/8:
-                    _, ids_p = torch.topk(dom_pred[ids_p], rois.size(1)/8)
-                    ids_p = ids_p.data.cuda()
 
-                ids_n = (rois_label.data == 0).nonzero()
-                ids_n = torch.squeeze(ids_n).cuda()
-
-                if ids_n.size(0) > rois.size(1)/4:
-                    _, ids_n = torch.topk(dom_pred[ids_n], rois.size(1)/4)
-                    ids_n = ids_n.data.cuda()
-
-                ids_st = torch.cat((ids_p, ids_n), 0).cuda()
-
-                pooled_feat = pooled_feat[ids_st]
-                rois = rois[:,ids_st,:]
-                rois_label = rois_label[ids_st]
-                rois_target = rois_target[ids_st]
-                rois_inside_ws = rois_inside_ws[ids_st]
-                rois_outside_ws = rois_outside_ws[ids_st]
         #---------------------transfer learning done-------------------------#
 
 
-
-        #----------------------------FRCN learning------------------------------#
         # compute bbox offset
         bbox_pred = self.RCNN_bbox_pred(pooled_feat)
         if self.training and not self.class_agnostic:
@@ -185,24 +182,26 @@ class _fasterRCNN(nn.Module):
 
         if self.training:
             # classification loss
-            RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+            if cfg.TRANSFER_LOSS == True:
+                rois_label_loss = torch.eye(self.n_classes)[rois_label.data.cpu()].type(torch.FloatTensor)
+                rois_label_loss = Variable(rois_label_loss.cuda())
+                weight_loss_cls = weight.view(rois_label.size(0), 1).repeat(1 ,self.n_classes)
 
-            # bounding box regression L1 loss
-            RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
+                RCNN_loss_cls = F.binary_cross_entropy_with_logits(cls_score, rois_label_loss, weight_loss_cls)
+
+                # bounding box regression L1 loss
+                RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws, True, True, weight)
+
+            else:
+                RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+
+                # bounding box regression L1 loss
+                RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
 
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
-        #---------------------------FRCN learning done----------------------------#
 
-        #process source input
-        if self.training and transfer == True:            
-            if batch_size == 1 and self.source_weight != -1:
-                if domain_label.data[0] == 1:
-                    rpn_loss_cls *= self.source_weight
-                    rpn_loss_bbox *= self.source_weight
-                    RCNN_loss_cls *= self.source_weight
-                    RCNN_loss_bbox *= self.source_weight
 
 
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss
