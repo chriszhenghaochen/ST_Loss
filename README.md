@@ -1,4 +1,6 @@
-# Joint-Train Faster RCNN using Selective Loss implemented with Pytorch
+# Faster RCNN for multi-domains
+
+Using selective loss, currently avaliable for pedestratin detection(binary class), 2 domains.
 
 ## Install and Setup
 
