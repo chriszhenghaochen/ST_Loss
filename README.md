@@ -1,6 +1,10 @@
 # Faster RCNN for multi-domains
 
-Using selective loss, currently avaliable for pedestratin detection(binary class), 2 domains.
+* Using selective loss, currently avaliable for pedestratin detection(binary class), 2 domains. 
+
+* Using Faster RCNN as baseline
+
+* Implement with Pytorch.
 
 ## Install and Setup
 
