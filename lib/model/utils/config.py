@@ -303,7 +303,7 @@ __C.CROP_RESIZE_WITH_MAX_POOL = True
 
 
 #Transfer learning:
-__C.TRANSFER = False
+__C.TRANSFER = True
 __C.TRANSFER_SELECT = 'ALL'
 __C.TRANSFER_WEIGHT = 0.5
 __C.TRANSFER_GAMMA = 16
