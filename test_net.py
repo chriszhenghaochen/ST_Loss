@@ -57,7 +57,7 @@ def parse_args():
                       help='set config keys', default=None,
                       nargs=argparse.REMAINDER)
   parser.add_argument('--load_dir', dest='load_dir',
-                      help='directory to load models', default="/home/zhcheng/C_1",
+                      help='directory to load models', default="/home/zhcheng/C_4",
                       type=str)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
@@ -138,6 +138,9 @@ if __name__ == '__main__':
   print('Using config:')
   pprint.pprint(cfg)
 
+  #set transfer
+  transfer = cfg.TRANSFER
+
   cfg.TRAIN.USE_FLIPPED = False
   imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdbval_name, False)
   imdb.competition_mode(on=True)
@@ -152,13 +155,13 @@ if __name__ == '__main__':
 
   # initilize the network here.
   if args.net == 'vgg16':
-    fasterRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic, transfer = transfer)
   elif args.net == 'res101':
-    fasterRCNN = resnet(imdb.classes, 101, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 101, pretrained=False, class_agnostic=args.class_agnostic, transfer = transfer)
   elif args.net == 'res50':
-    fasterRCNN = resnet(imdb.classes, 50, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 50, pretrained=False, class_agnostic=args.class_agnostic, transfer = transfer)
   elif args.net == 'res152':
-    fasterRCNN = resnet(imdb.classes, 152, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 152, pretrained=False, class_agnostic=args.class_agnostic, transfer = transfer)
   else:
     print("network is not defined")
     pdb.set_trace()
