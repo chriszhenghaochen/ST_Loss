@@ -303,12 +303,12 @@ __C.CROP_RESIZE_WITH_MAX_POOL = True
 
 
 #Transfer learning:
-__C.TRANSFER = True
-__C.TRANSFER_SELECT = 'ALL'
-__C.TRANSFER_WEIGHT = 0.5
-__C.TRANSFER_GAMMA = 16
-__C.TRANSFER_LOSS_START = 100
-__C.TRANSFER_GRL = False
+__C.TRANSFER = False            #if this is False, it woule be baseline, Faster RCNN
+__C.TRANSFER_SELECT = 'ALL'     #select "ALL", "POSITIVE", "BALANCE" or "RANDOM"
+__C.TRANSFER_WEIGHT = 0.5       #alpha
+__C.TRANSFER_GAMMA = 16         #gamma
+__C.TRANSFER_LOSS_START = 100   #transfer loss start epoch
+__C.TRANSFER_GRL = False        #use Grandient Reversal or not
 
 import pdb
 def get_output_dir(imdb, weights_filename):

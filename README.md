@@ -33,7 +33,12 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 
 
 ## Result
-Will update Result soon
+**Data**: ECCV Workshop WIDER FACE AND PEDESTRIAN CHALLENGE 2018 [Challenge 2](http://www.wider-challenge.org/) . Use Surveillance data set as **source** and Driven data set as **target**.
+
+| Result           | Surveillance  | Driven   |
+| -----------------|:-------------:|:--------:|
+| Baseline (FRCN)  |   71.9        |  63.8    |
+| Selective Loss   |   71.5        |  **66.6**|
 
 
 
