@@ -1,4 +1,4 @@
-# Selective Loss
+# Selective Transferring Loss
 
 ## Introduction
 
@@ -39,7 +39,7 @@ To change other data format (e.g. Kitti) to Pascal_VOC format, please refer to
 | -----------------|:-------------:|:--------:|
 | Baseline (FRCN)  |   71.8        |  62.1    |
 | FRCN Joint Train |   71.9        |  63.8    |
-| Selective Loss   |   71.5        |  **66.6**|
+| ST Loss          |   71.5        |  **66.6**|
 
 
 
