@@ -48,7 +48,6 @@ class _fasterRCNN(nn.Module):
             self.transfer_gamma = cfg.TRANSFER_GAMMA
 
 
-
     def forward(self, im_data, im_info, gt_boxes, num_boxes, domain = None, l = 0, loss_start = False):
         batch_size = im_data.size(0)
 
@@ -101,6 +100,7 @@ class _fasterRCNN(nn.Module):
         #-----------------------transfer learning----------------------------#
         #print(domain)
         dom_loss = 0
+        valid_index = torch.zeros(0)
 
         #base line: transfer == False
         if self.training and self.transfer:
@@ -119,6 +119,14 @@ class _fasterRCNN(nn.Module):
                 l_target = domain_label
 
                 self.weight = p_target**l_target
+
+                #drop zero weight
+                valid_index = torch.nonzero(self.weight.data).cuda()
+                if valid_index.size(0) == 0:
+                    valid_index = torch.zeros(1, 1)
+
+                valid_index = valid_index.squeeze(1)
+                
             ###############################################
 
 
@@ -192,12 +200,17 @@ class _fasterRCNN(nn.Module):
             if self.transfer and loss_start:
                     rois_label_loss = torch.eye(self.n_classes)[rois_label.data.cpu()].type(torch.FloatTensor)
                     rois_label_loss = Variable(rois_label_loss.cuda())
-                    weight_loss_cls = self.weight.view(rois_label.size(0), 1).repeat(1 ,self.n_classes)
+                    rois_label_loss = rois_label_loss[valid_index]
 
-                    RCNN_loss_cls = F.binary_cross_entropy_with_logits(cls_score, rois_label_loss, weight_loss_cls)
+                    weight_cls_loss = self.weight.view(rois_label.size(0), 1).repeat(1 ,self.n_classes)
+                    weight_cls_loss = weight_cls_loss[valid_index]
+
+                    cls_score_loss = cls_score[valid_index]
+
+                    RCNN_loss_cls = F.binary_cross_entropy_with_logits(cls_score_loss, rois_label_loss, weight_cls_loss)
 
                     # bounding box regression L1 loss
-                    RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws, True, True, self.weight)                    
+                    RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws, True, True, self.weight, valid_index)                    
 
             else:
                 RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
@@ -208,8 +221,6 @@ class _fasterRCNN(nn.Module):
 
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
-
-
 
         return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, dom_loss
 
