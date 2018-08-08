@@ -122,8 +122,9 @@ class _fasterRCNN(nn.Module):
 
                 #drop zero weight
                 valid_index = torch.nonzero(self.weight.data).cuda()
-                if valid_index.size(0) == 0:
-                    valid_index = torch.zeros(1, 1)
+
+                if len(valid_index.size()) == 0:
+                    valid_index = torch.zeros(1, 1).type(torch.LongTensor).cuda()
 
                 valid_index = valid_index.squeeze(1)
                 
